@@ -1,29 +1,5 @@
-# vue-test-practice
+# Vue test practice
 
-## Project setup
-```
-yarn install
-```
+[Vue 테스팅 핸드북](https://lmiller1990.github.io/vue-testing-handbook)을 참고하여 공부하고 기록하는 레포입니다.
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Run your unit tests
-```
-yarn test:unit
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## Render Components
