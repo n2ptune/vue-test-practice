@@ -1,6 +1,12 @@
 <template>
   <div>
-    {{ greeting }}
+    <div>
+      <span v-if="isAdmin">Admin</span>
+      <span v-else>User</span>
+      <button>
+        {{ msg }}
+      </button>
+    </div>
     <GreetingChild />
   </div>
 </template>
@@ -11,8 +17,15 @@ export default {
     GreetingChild: () => import('./GreetingChild.vue')
   },
 
-  data: () => ({
-    greeting: 'Hello Greeting'
-  })
+  props: {
+    msg: {
+      type: String,
+      required: true
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
