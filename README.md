@@ -116,3 +116,53 @@ describe('Greeting.vue', () => {
 ```
 
 `Greeting` 컴포넌트는 `isAdmin`이 참이면 Hello Admin이라는 텍스트가 버튼안에 포함되고, 그렇지 않으면 Hello User라는 텍스트가 포함된다. 즉 이 테스트는 통과된다. 팩토리 메서드의 인자로 `props`를 줘서 정상적으로 통과되는 걸 볼 수 있다.
+
+### computed
+
+어떤 데이터에 의존해서 새로운 결과를 반환하는 `computed` 속성은 `props`를 테스트하는 것과 비슷하게 진행할 수 있다. 아래 간단한 `number` 타입 `props`를 받는 컴포넌트가 하나 있다. 수가 짝수면 `even`이 표시되고 홀수면 `odd`가 표시된다.
+
+```vue
+<template>
+  <div>
+    {{ num }}
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    original: {
+      type: Number,
+      required: true
+    }
+  },
+
+  computed: {
+    num() {
+      return this.original % 2 == 0 ? 'even' : 'odd'
+    }
+  }
+}
+</script>
+```
+
+이 컴포넌트가 정상적으로 작동하는지에 대해 테스트한다. 이전에 했던 것처럼 `props`를 주어 정상적으로 작동하는지 본다.
+
+```js
+import { shallowMount } from '@vue/test-utils'
+import NumberCard from '@/components/NumberCard.vue'
+
+describe('NumberCard.vue', () => {
+  it('computed property num', () => {
+    const wrapper = shallowMount(NumberCard, {
+      props: {
+        original: 3
+      }
+    })
+
+    expect(wrapper.find('div').text()).toBe('odd')
+  })
+})
+```
+
+`props`의 `original`은 3이다. 그러므로 NumberCard 컴포넌트의 `num` 속성은 odd라는 문자열이기 때문에 정확히 odd가 찍힌걸 볼 수 있다.
