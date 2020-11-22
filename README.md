@@ -75,3 +75,44 @@ export default {
 한마디로, 테스트를 진행할 범위가 대상이 되는 컴포넌트와 그 자식 컴포넌트까지 영향을 끼친다면 `mount` 메서드로 자식 컴포넌트까지 렌더링해서 접근할 수 있게 하고, 그렇지 않고 한 컴포넌트를 대상으로 하되 외부 의존성을 없애고 자식 컴포넌트를 렌더링할 필요가 없다면 `shallowMount`를 사용한다.
 
 공부해볼 테스트 방법은 유닛 테스트(단위 테스트)이기 때문에 한 컴포넌트의 기능을 테스트하기 위해서 자식 컴포넌트까지 렌더링할 필요가 없어 되도록이면 `shallowMount`를 사용하도록 한다.
+
+### props
+
+컴포넌트는 부모로부터 물려받는 `props`라는 속성이 있다. 테스트를 진행할 때 구성할 수 있다. 여러 테스트르 진행하기 위해 테스트마다 다른 컴포넌트를 생성해주는 팩토리 메서드를 하나 만든다.
+
+```js
+import { shallowMount } from '@vue/test-utils'
+import Greeting from '../../src/components/Greeting.vue'
+
+const factory = props => {
+  return shallowMount(Greeting, {
+    props: {
+      ...props
+    }
+  })
+}
+```
+
+`factory` 메서드는 `props`를 인자로 받아 마운팅된 뷰 인스턴스 Wrapper를 반환한다. 그럼 서로 다른 `props`를 테스트할 때 유용하게 쓸 수 있다. 만약 `isAdmin` 속성을 부모로부터 물려받고 이 속성이 참이면 어떤 메세지를 보여준다는 걸 가정하고 테스트를 진행할 때 아래와 작성할 수 있다.
+
+```js
+describe('Greeting.vue', () => {
+  it('Render admin message if true isAdmin', () => {
+    const wrapper = factory({ msg: 'Hello Admin', isAdmin: true })
+
+    console.log(wrapper.html())
+
+    expect(wrapper.find('span').text()).toBe('Admin')
+    expect(wrapper.find('button').text()).toBe('Hello Admin')
+  })
+
+  it('Render admin message if false isAdmin', () => {
+    const wrapper = factory({ msg: 'Hello User', isAdmin: false })
+
+    expect(wrapper.find('span').text()).toBe('User')
+    expect(wrapper.find('button').text()).toBe('Hello User')
+  })
+})
+```
+
+`Greeting` 컴포넌트는 `isAdmin`이 참이면 Hello Admin이라는 텍스트가 버튼안에 포함되고, 그렇지 않으면 Hello User라는 텍스트가 포함된다. 즉 이 테스트는 통과된다. 팩토리 메서드의 인자로 `props`를 줘서 정상적으로 통과되는 걸 볼 수 있다.
