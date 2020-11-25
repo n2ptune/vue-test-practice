@@ -166,3 +166,142 @@ describe('NumberCard.vue', () => {
 ```
 
 `props`의 `original`은 3이다. 그러므로 NumberCard 컴포넌트의 `num` 속성은 odd라는 문자열이기 때문에 정확히 odd가 찍힌걸 볼 수 있다.
+
+## Event Trigger
+
+이벤트가 정상적으로 작동하는지에 대한 테스트를 진행할 수 있다.
+
+### 비동기 이벤트
+
+폼이 있고, 폼 안에 `submit` 버튼을 누르면 외부 API 서버에 요청해서 데이터를 받는 이벤트에 대해서 테스트를 진행해본다. 핸드북에 나오는 예제는 실제 API 서버에 요청하지 않고 서버가 어떻게 응답을 하는지를 추상화 시켜 `mock`을 만들어 테스트에 사용한다.
+
+예를 들어 `/api/show` 경로에 `username`과 함께 요청하면 정상적인 응답을 한다고 가정하고 테스트를 진행한다. 먼저 폼과 서버의 요청이 완료되면 보여줄 부분을 컴포넌트로 만든다.
+
+```vue
+<template>
+  <div>
+    <form @submit.prevent="onSubmit">
+      <input v-model="username" type="text" data-username />
+      <input type="submit" />
+    </form>
+    <div v-if="submitted" class="message">
+      {{ username }}
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data: () => ({
+    username: '',
+    submitted: false
+  }),
+
+  methods: {
+    onSubmit() {
+      return this.$http
+        .get('/api/show', { username: this.username })
+        .then(() => {
+          this.submitted = true
+        })
+        .catch(() => {})
+    }
+  }
+}
+</script>
+```
+
+폼이 `submit`되면 기본적인 브라우저 동작에서는 페이지가 새로고침 되기 때문에 `prevent` 접미사를 붙인다. 그리고 `submit`하는 이벤트 메서드는 `Promise`를 반환하는 비동기 이벤트이다. 실제로는 `$http`에 `axios`같은 모듈이 많이 쓰인다.
+
+### 테스트
+
+가짜 요청에 의한 가짜 응답을 하기 위해 간단한 객체와 메서드를 만든다.
+
+```js
+let url = ''
+let data = ''
+
+const mockHttp = {
+  get: (_url, _data) => {
+    return new Promise((resolve, _reject) => {
+      url = _url
+      data = _data
+      resolve()
+    })
+  }
+}
+```
+
+해당 객체는 `get` 메서드를 가지고 있으며 이 메서드는 `Promise`를 반환한다. 인자를 두 개 받고 `url`과 `data`도 테스팅하기 위해 받은 데이터를 모두 저장해둔다.
+
+```js
+describe('EventTrigger.vue', () => {
+  test('Show username on submit event', async () => {
+    const wrapper = shallowMount(EventTrigger)
+  })
+})
+```
+
+테스트에 사용할 간단한 `wrapper`를 반환받는다.
+
+```js
+wrapper.find('[data-username]').setValue('alice')
+wrapper.find('form').trigger('submit.prevent')
+```
+
+폼을 테스트할 데이터로 채워준다. 그리고 `trigger` 메서드를 이용해서 이벤트를 실행시킨다.
+
+```js
+expect(wrapper.find('.message').text()).toBe('alice')
+```
+
+`message` 클래스를 가지는 원소의 텍스트는 `alice`여야 한다는 테스트 구문인데, 이대로 실행하게 되면 오류가 난다. 오류에는 2가지 이유가 있다.
+
+- `$http`가 아직 정의되지 않았다.
+- `Promise`가 처리되기 전에 테스트가 끝났다.
+- DOM이 업데이트 되기 전에 테스트가 끝났다.
+
+`$http`는 나중에 `axios` 모듈을 추가해서 프로토타입에 객체를 바인딩시키면 되지만, 테스트에서는 `axios`를 사용하지 않기 때문에 우리가 만들어놓았던 `mock` 객체를 바인딩 시켜주어야 한다. 컴포넌트를 마운팅할 때, 뷰 인스턴스의 속성 등을 인젝션시킬 수 있다. `shallowMount` 혹은 `mount`의 두번째 인자에 해당하는 옵션을 준다.
+
+```js
+const wrapper = shallowMount(EventTrigger, {
+  global: {
+    mocks: {
+      $http: mockHttp
+    }
+  }
+})
+```
+
+핸드북에서는 두번째 인자에 바로 `mocks` 속성에 바인딩하면 되지만, `@vue/test-utils` 라이브러리의 버전이 올라감에 따라 위와 같이 바뀌었다. 이제 `this.$http`는 우리가 만들어 놓았던 `mock` 객체가 되었다.
+
+```sh
+yarn add flush-promises
+```
+
+해당 라이브러리는 현재 `Promise`를 모두 처리된 상태로 만들어주는 테스트할 때 유용한 라이브러리다.
+
+```js
+describe('EventTrigger.vue', () => {
+  test('Show username on submit event', async () => {
+    const wrapper = shallowMount(EventTrigger, {
+      global: {
+        mocks: {
+          $http: mockHttp
+        }
+      }
+    })
+
+    wrapper.find('[data-username]').setValue('alice')
+    wrapper.find('form').trigger('submit.prevent')
+
+    await flushPromise()
+
+    expect(wrapper.find('.message').text()).toBe('alice')
+    expect(url).toBe('/api/show')
+    expect(data).toEqual({ username: 'alice' })
+  })
+})
+```
+
+전체적인 테스트 내용을 이렇게 작성해주고 `url`과 `data`까지 테스트해주면 된다.

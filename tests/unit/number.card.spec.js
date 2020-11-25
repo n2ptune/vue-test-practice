@@ -11,4 +11,12 @@ describe('NumberCard.vue', () => {
 
     expect(wrapper.find('div').text()).toBe('odd')
   })
+
+  it('computed property num with call', () => {
+    const evenProps = { original: 2 }
+    const oddProps = { original: 3 }
+
+    expect(NumberCard.computed.num.call(evenProps)).toBe('even')
+    expect(NumberCard.computed.num.call(oddProps)).toBe('odd')
+  })
 })
