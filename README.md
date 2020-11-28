@@ -305,3 +305,36 @@ describe('EventTrigger.vue', () => {
 ```
 
 전체적인 테스트 내용을 이렇게 작성해주고 `url`과 `data`까지 테스트해주면 된다.
+
+### Emit Event
+
+뷰에서는 부모와 자식 컴포넌트 간의 통신을 위해 `props`와 `emit`을 사용한다. 부모가 자식으로 어떤 데이터를 건내주며 통신하는데, 이 때 데이터는 `props`가 된다. 자식에서 부모에게 데이터를 건내주기 위해 `emit` 이벤트를 이용한다. 인스턴스의 `$emit` 메서드를 사용하면 가능한데, 첫번째 인자에 이벤트 이름 그리고 두번째 인자부터 부모에 보낼 데이터를 실어 보낸다. 예를 들어 `emit` 이벤트는 아래와 같이 호출한다.
+
+```js
+this.$emit('some-event', firstData, secondData)
+```
+
+부모는 자식이 발생시키는 이벤트를 핸들할 수 있어야 한다. 자식 컴포넌트를 부모 템플릿에 넣을 때 핸들할 메서드를 지정할 수 있다.
+
+```vue
+// Parent Component
+<template>
+  <div>
+    <child-component @some-event="handleSomeEvent">
+  </div>
+</template>
+
+<script>
+export default {
+  methods: {
+    handleSomeEvent(firstData, secondData) {
+      console.log(firstData, secondData)
+    }
+  }
+}
+</script>
+```
+
+자식 컴포넌트에서 이벤트를 발생시킬 때 마다 부모 컴포넌트의 `handleSomeEvent` 메서드가 실행된다. 이 때, 데이터가 같이 담겨져 실행된다.
+
+테스트 유틸 라이브러리를 이용해서 위의 `emit` 이벤트에 대해 테스트를 진행할 수 있다.
