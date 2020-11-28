@@ -338,3 +338,59 @@ export default {
 자식 컴포넌트에서 이벤트를 발생시킬 때 마다 부모 컴포넌트의 `handleSomeEvent` 메서드가 실행된다. 이 때, 데이터가 같이 담겨져 실행된다.
 
 테스트 유틸 라이브러리를 이용해서 위의 `emit` 이벤트에 대해 테스트를 진행할 수 있다.
+
+```js
+import EmitComponent from '@/components/EmitComponent.vue'
+import { shallowMount } from '@vue/test-utils'
+
+describe('EmitComponent.vue', () => {
+  test('Emit event', () => {
+    const wrapper = shallowMount(EmitComponent)
+
+    // 컴포넌트의 handleEmit 메서드 실행
+    wrapper.vm.handleEmit()
+
+    console.log(wrapper.emitted())
+  })
+})
+```
+
+테스트 라이브러리에서 지원하는 `emitted` API는 발생한 `emit` 이벤트에 대해 발생한 이벤트가 키고 이벤트에서 전달된 데이터가 값인 객체로 반환한다. 그러므로 여기서는 `{ 'some-event': [ [ 'emit-component' ] ] }` 형태의 객체가 반환되는 걸 볼 수 있다.
+
+확인을 위해 `emit` 이벤트를 한 개 더 추가해본다.
+
+```vue
+<template>
+  <div></div>
+</template>
+
+<script>
+export default {
+  props: {
+    cid: {
+      type: String
+    }
+  },
+
+  methods: {
+    handleEmit() {
+      this.$emit('some-event', this.cid || 'emit-component')
+      this.$emit('child-event', 'child', 'parent', 'component')
+    }
+  }
+}
+</script>
+
+<style></style>
+```
+
+`child-event` 라는 이벤트를 한 개 추가했다. 그리고 테스트를 실행해보면 아래와 같은 객체가 반환된다.
+
+```js
+{
+  'some-event': [ [ 'emit-component' ] ],
+  'child-event': [ [ 'child', 'parent', 'component' ] ]
+}
+```
+
+그런데 왜 값은 이중 배열로 감싸져 있을까? 답은 이벤트가 여러번 실행될 수 있기 때문이다. 같은 이벤트 이름으로 실행되서 반환된 결과 값을 배열로 저장한다. 그렇기 때문에 같은 이벤트를 2번 실행했으면 값의 배열 길이는 2가 된다.

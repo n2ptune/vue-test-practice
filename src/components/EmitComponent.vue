@@ -13,6 +13,7 @@ export default {
   methods: {
     handleEmit() {
       this.$emit('some-event', this.cid || 'emit-component')
+      this.$emit('child-event', 'child', 'parent', 'component')
     }
   }
 }
