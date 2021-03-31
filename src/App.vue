@@ -1,13 +1,15 @@
 <template>
-  <div>
-    <Greeting />
+  <div class="container">
+    <SignForm />
   </div>
 </template>
 
 <script>
+import SignForm from './components/SignForm.vue'
+
 export default {
   components: {
-    Greeting: () => import('./components/Greeting.vue')
+    SignForm
   }
 }
 </script>
